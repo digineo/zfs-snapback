@@ -161,29 +161,22 @@ func DoSync(from, to *Fs, flags Flags) error {
 			Flags:       flags,
 		}
 
-		var previous string
-		var missing []string
+		transfer.CurrentSnapshot = from.snaps[len(from.snaps)-1]
 
-		if len(to.snaps) == 0 {
-			missing = from.snaps
-		} else {
+		if len(to.snaps) > 0 {
 			common := lastCommonSnapshotIndex(from.snaps, to.snaps)
 			if common == -1 {
 				return fmt.Errorf("%s and %s don't have a common snapshot", from.fullname, to.fullname)
 			}
-			previous = from.snaps[common]
-			missing = from.snaps[common+1:]
-		}
+			transfer.PreviousSnapshot = from.snaps[common]
 
-		for _, current := range missing {
-			transfer.PreviousSnapshot = previous
-			transfer.CurrentSnapshot = current
-
-			if err := transfer.Run(); err != nil {
-				return err
+			if transfer.PreviousSnapshot == transfer.CurrentSnapshot {
+				// nothing to be transferred
+				return nil
 			}
-			previous = current
 		}
+
+		return transfer.Run()
 	}
 
 	// synchronize the children

@@ -27,4 +27,3 @@ zfs-snapback root@source.tld:remote/zfs/fs/path root@destination.tld:zpool/backu
 
 - Testing
 - Complete error handling
-- Use `zfs send -I` instead of multiple calls to `zfs send -i`

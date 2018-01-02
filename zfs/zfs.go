@@ -82,7 +82,7 @@ func (z *Zfs) Send(fs string, previous, current string, dry bool) *exec.Cmd {
 	}
 
 	if previous != "" {
-		args = append(args, "-i", fmt.Sprintf("@%s", previous))
+		args = append(args, "-I", fmt.Sprintf("@%s", previous))
 	}
 
 	args = append(args, fmt.Sprintf("%s@%s", fs, current))
