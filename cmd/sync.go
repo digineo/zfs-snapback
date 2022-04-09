@@ -66,6 +66,7 @@ func init() {
 	set.BoolVarP(&flags.Recursive, "recursive", "r", false, "Synchronize filesystems revursively")
 	set.BoolVarP(&flags.Progress, "progress", "p", false, "Show progress")
 	set.BoolVarP(&flags.Force, "force", "f", false, "Force a rollback of the file system to the most recent snapshot before performing the receive operation.")
+	set.BoolVarP(&flags.Raw, "raw", "w", false, "Send encrypted streams as raw.")
 	set.StringVarP(&flags.Compression, "compression", "c", "", "Set the compression option for SSH (yes/no)")
 
 	RootCmd.AddCommand(syncCmd)

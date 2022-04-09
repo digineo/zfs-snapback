@@ -17,6 +17,7 @@ type Flags struct {
 	Recursive   bool
 	Force       bool
 	Progress    bool
+	Raw         bool
 	Compression string
 }
 
@@ -43,12 +44,12 @@ func (t *Transfer) recv() *exec.Cmd {
 
 // send initializes the ZFS send command
 func (t *Transfer) send() *exec.Cmd {
-	return t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, false)
+	return t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, t.Flags.Raw, false)
 }
 
 // sendSize retrieves the size of the snapshot diff
 func (t *Transfer) sendSize() (int64, error) {
-	cmd := t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, true)
+	cmd := t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, t.Flags.Raw, true)
 	out, err := cmd.Output()
 
 	if err != nil {

@@ -81,9 +81,12 @@ func (z *Zfs) Create(fs string) error {
 }
 
 // Send initializes a `zfs send` command
-func (z *Zfs) Send(fs string, previous, current string, dry bool) *exec.Cmd {
-
+func (z *Zfs) Send(fs string, previous, current string, raw, dry bool) *exec.Cmd {
 	args := []string{"send"}
+
+	if raw {
+		args = append(args, "-w")
+	}
 
 	if dry {
 		args = append(args, "-nP")
