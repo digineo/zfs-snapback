@@ -14,17 +14,17 @@
 package cmd
 
 import (
+	"fmt"
 	"os/exec"
 
 	"github.com/piotaixr/zfs-snapback/zfs"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 // syncCmd represents the sync command
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "A brief description of your command",
+	Short: "Synchronizes ZFS snapshots",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -39,13 +39,13 @@ to quickly create a Cobra application.`,
 		// source
 		source, err = zfs.GetFilesystem(flags, args[0])
 		if err != nil {
-			return errors.Wrapf(err, "Invalid source '%s'", args[0])
+			return fmt.Errorf("invalid source '%s': %w", args[0], err)
 		}
 
 		// source
 		destination, err = zfs.GetFilesystem(flags, args[1])
 		if err != nil {
-			return errors.Wrapf(err, "Invalid destination '%s'", args[1])
+			return fmt.Errorf("invalid destination '%s': %w", args[1], err)
 		}
 
 		return nil

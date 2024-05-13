@@ -1,7 +1,7 @@
 package zfs
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,18 +11,18 @@ import (
 func TestParseList(t *testing.T) {
 	assert := assert.New(t)
 
-	data, err := ioutil.ReadFile("testdata/zfs_list")
+	data, err := os.ReadFile("testdata/zfs_list")
 	assert.NoError(err)
 
 	zfs := Zfs{}
 	result := zfs.parseList(data)
 
 	fs, err := result.GetChild("xx")
-	assert.EqualError(err, "Unable to find xx")
+	assert.EqualError(err, "unable to find xx")
 	assert.Nil(fs)
 
 	fs, err = result.GetChild("zroot/doesnotexist")
-	assert.EqualError(err, "Unable to find doesnotexist in zroot")
+	assert.EqualError(err, "unable to find doesnotexist in zroot")
 	assert.Nil(fs)
 
 	fs, err = result.GetChild("zroot")
@@ -74,7 +74,7 @@ func TestParseLocation(t *testing.T) {
 func TestParseTransferSize(t *testing.T) {
 	assert := assert.New(t)
 
-	data, err := ioutil.ReadFile("testdata/transfer_size")
+	data, err := os.ReadFile("testdata/transfer_size")
 	assert.NoError(err)
 
 	size, err := parseTransferSize(data)

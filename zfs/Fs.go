@@ -54,12 +54,12 @@ func (f *Fs) GetChild(fspath string) (*Fs, error) {
 		fsname = fspath
 	}
 
-	child, _ := f.children[fsname]
+	child := f.children[fsname]
 	if child == nil {
 		if f.fullname == "" {
-			return nil, fmt.Errorf("Unable to find %s", fsname)
+			return nil, fmt.Errorf("unable to find %s", fsname)
 		}
-		return nil, fmt.Errorf("Unable to find %s in %s", fsname, f.fullname)
+		return nil, fmt.Errorf("unable to find %s in %s", fsname, f.fullname)
 	}
 
 	if slash != -1 {
