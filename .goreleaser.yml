@@ -1,0 +1,55 @@
+builds:
+- main: ./main.go
+
+  # Custom environment variables to be set during the builds.
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - linux
+  goarch:
+    - amd64
+    - arm64
+  flags:
+    - -trimpath
+
+archives:
+- format: binary
+
+nfpms:
+  # note that this is an array of nfpm configs
+  -
+    # Name of the package.
+    # Defaults to `ProjectName`.
+    package_name: zfs-snapback
+
+    # You can change the file name of the package.
+    # Default: `{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}`
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+    # Your app's vendor.
+    # Default is empty.
+    vendor: Digineo GmbH
+
+    # Your app's maintainer (probably you).
+    # Default is empty.
+    maintainer: Julian Kornberger <jk+github@digineo.de>
+
+    # Your app's description.
+    # Default is empty.
+    description: Syncing tool for ZFS snapshots
+
+    # Formats to be generated.
+    formats:
+      - deb
+
+    # Override default /usr/local/bin destination for binaries
+    bindir: /usr/bin
+
+    # Section.
+    section: default
+
+    # Priority.
+    priority: extra
+
+    dependencies:
+    - zfsutils-linux
