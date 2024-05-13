@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -59,8 +60,26 @@ func (t *Transfer) sendSize() (int64, error) {
 	return parseTransferSize(out)
 }
 
+func (t *Transfer) RunWithRetry() error {
+	retries := 0
+	var err error
+
+	for {
+		err = t.run()
+		if err == nil || retries > 2 || !strings.Contains(err.Error(), "dataset is busy") {
+			break
+		}
+
+		retries++
+		log.Printf("dataset is busy, retrying in %d seconds", retries)
+		time.Sleep(time.Second * time.Duration(retries))
+	}
+
+	return err
+}
+
 // Run performs sync
-func (t *Transfer) Run() error {
+func (t *Transfer) run() error {
 	var err error
 	var size int64
 
@@ -168,7 +187,7 @@ func DoSync(from, to *Fs, flags Flags) error {
 			transfer.PreviousSnapshot = previous
 			transfer.CurrentSnapshot = current
 
-			if err := transfer.Run(); err != nil {
+			if err := transfer.RunWithRetry(); err != nil {
 				return err
 			}
 			previous = current
