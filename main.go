@@ -13,8 +13,18 @@
 
 package main
 
-import "github.com/piotaixr/zfs-snapback/cmd"
+import (
+	"log"
+	"os"
+
+	"github.com/piotaixr/zfs-snapback/cmd"
+)
 
 func main() {
+	// Disable timestamps in log output when journald is present
+	if os.Getenv("JOURNAL_STREAM") != "" {
+		log.SetFlags(0)
+	}
+
 	cmd.Execute()
 }
