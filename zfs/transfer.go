@@ -106,7 +106,11 @@ func (t *Transfer) run() error {
 
 		if err == nil {
 			// It is the first failed process
-			err = fmt.Errorf("%s failed with %v: %s", cmd.Args, e, cmd.Stderr.(*bytes.Buffer).String())
+			err = &CommandError{
+				Args:   cmd.Args,
+				Cause:  e,
+				Stderr: cmd.Stderr.(*bytes.Buffer).String(),
+			}
 		}
 	}
 
@@ -128,11 +132,14 @@ func (t *Transfer) run() error {
 	}
 
 	// runs the recv command
+	recvWg := sync.WaitGroup{}
+	recvWg.Add(1)
 	recv := func() {
 		if e := recvCommand.Run(); e != nil {
 			setErr(e, recvCommand)
 			out.Close()
 		}
+		recvWg.Done()
 	}
 
 	/*
@@ -148,6 +155,7 @@ func (t *Transfer) run() error {
 		go recv()
 		copy()
 		e = sendCommand.Wait()
+		recvWg.Wait()
 	}
 
 	if e != nil {
