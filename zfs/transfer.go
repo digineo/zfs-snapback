@@ -13,7 +13,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-// Flags are options for a transfer process
+// Flags are options for a transfer process.
 type Flags struct {
 	Recursive   bool
 	Force       bool
@@ -22,13 +22,19 @@ type Flags struct {
 	Compression string
 }
 
-// Transfer is a set of arguments for transferring a single snapshot
+// Transfer is a set of arguments for transferring a single snapshot.
 type Transfer struct {
 	Source           *Fs
 	Destination      *Fs
 	PreviousSnapshot string // can be empty
 	CurrentSnapshot  string
 	Flags            Flags
+}
+
+func withStderr(cmd *exec.Cmd) (*exec.Cmd, *bytes.Buffer) {
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+	return cmd, stderr
 }
 
 func (t *Transfer) recv() *exec.Cmd {
@@ -43,16 +49,15 @@ func (t *Transfer) recv() *exec.Cmd {
 	return t.Destination.zfs.exec("/sbin/zfs", args...)
 }
 
-// send initializes the ZFS send command
+// send initializes the ZFS send command.
 func (t *Transfer) send() *exec.Cmd {
 	return t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, t.Flags.Raw, false)
 }
 
-// sendSize retrieves the size of the snapshot diff
+// sendSize retrieves the size of the snapshot diff.
 func (t *Transfer) sendSize() (int64, error) {
 	cmd := t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, t.Flags.Raw, true)
 	out, err := cmd.Output()
-
 	if err != nil {
 		return 0, err
 	}
@@ -61,12 +66,13 @@ func (t *Transfer) sendSize() (int64, error) {
 }
 
 func (t *Transfer) RunWithRetry() error {
+	const maxRetries = 2
 	retries := 0
 	var err error
 
 	for {
 		err = t.run()
-		if err == nil || retries > 2 || !strings.Contains(err.Error(), "dataset is busy") {
+		if err == nil || retries > maxRetries || !strings.Contains(err.Error(), "dataset is busy") {
 			break
 		}
 
@@ -78,8 +84,8 @@ func (t *Transfer) RunWithRetry() error {
 	return err
 }
 
-// Run performs sync
-func (t *Transfer) run() error {
+// Run performs sync.
+func (t *Transfer) run() error { //nolint:funlen
 	var err error
 	var size int64
 
@@ -90,17 +96,15 @@ func (t *Transfer) run() error {
 		}
 	}
 
-	recvCommand := t.recv()
-	sendCommand := t.send()
-	recvCommand.Stderr = &bytes.Buffer{}
-	sendCommand.Stderr = &bytes.Buffer{}
+	recvCommand, recvErrOut := withStderr(t.recv())
+	sendCommand, sendErrOut := withStderr(t.send())
 	in, _ := recvCommand.StdinPipe()
 	out, _ := sendCommand.StdoutPipe()
 
 	log.Printf("Running %s | %s\n", strings.Join(sendCommand.Args, " "), strings.Join(recvCommand.Args, " "))
 
 	errMtx := sync.Mutex{}
-	setErr := func(e error, cmd *exec.Cmd) {
+	setErr := func(e error, cmd *exec.Cmd, errOut *bytes.Buffer) {
 		errMtx.Lock()
 		defer errMtx.Unlock()
 
@@ -109,13 +113,13 @@ func (t *Transfer) run() error {
 			err = &CommandError{
 				Args:   cmd.Args,
 				Cause:  e,
-				Stderr: cmd.Stderr.(*bytes.Buffer).String(),
+				Stderr: errOut.String(),
 			}
 		}
 	}
 
 	// copy routine
-	copy := func() {
+	copyData := func() {
 		if t.Flags.Progress {
 			bar := pb.New64(size)
 			bar.Units = pb.U_BYTES
@@ -136,7 +140,7 @@ func (t *Transfer) run() error {
 	recvWg.Add(1)
 	recv := func() {
 		if e := recvCommand.Run(); e != nil {
-			setErr(e, recvCommand)
+			setErr(e, recvCommand, recvErrOut)
 			out.Close()
 		}
 		recvWg.Done()
@@ -153,19 +157,19 @@ func (t *Transfer) run() error {
 		out.Close()
 	} else {
 		go recv()
-		copy()
+		copyData()
 		e = sendCommand.Wait()
 		recvWg.Wait()
 	}
 
 	if e != nil {
-		setErr(e, sendCommand)
+		setErr(e, sendCommand, sendErrOut)
 	}
 
 	return err
 }
 
-// DoSync create missing file systems on the destination and transfers missing snapshots
+// DoSync create missing file systems on the destination and transfers missing snapshots.
 func DoSync(from, to *Fs, flags Flags) error {
 	log.Println("Synchronize", from.fullname, "to", to.fullname)
 
@@ -205,7 +209,6 @@ func DoSync(from, to *Fs, flags Flags) error {
 	// synchronize the children
 	if flags.Recursive {
 		for _, fromChild := range from.Children() {
-
 			// ensure the filesystem exists
 			toChild, err := to.CreateIfMissing(fromChild.name)
 			if err != nil {

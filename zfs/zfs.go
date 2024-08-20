@@ -3,13 +3,14 @@ package zfs
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 )
 
-// Zfs is a wrapper for local or remote ZFS commands
+// Zfs is a wrapper for local or remote ZFS commands.
 type Zfs struct {
 	exec Exec
 }
@@ -42,14 +43,15 @@ func GetFilesystem(flags Flags, location string) (*Fs, error) {
 	return fs.GetChild(fspath)
 }
 
-// List returns all ZFS volumes and snapshots
+// List returns all ZFS volumes and snapshots.
 func (z *Zfs) List() (*Fs, error) {
 	cmd := z.exec("/sbin/zfs", "list", "-t", "all", "-Hr", "-o", "name")
 	b, err := cmd.Output()
 	if err != nil {
-		if e := err.(*exec.ExitError); e != nil && len(e.Stderr) > 0 {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr != nil && len(exitErr.Stderr) > 0 {
 			// Add stderr to error message
-			err = fmt.Errorf("%s: %s", err, strings.TrimSpace(string(e.Stderr)))
+			err = fmt.Errorf("%s: %s", err, strings.TrimSpace(string(exitErr.Stderr)))
 		}
 
 		return nil, err
@@ -72,13 +74,13 @@ func (z *Zfs) parseList(b []byte) *Fs {
 	return root
 }
 
-// Create creates a new filesystem by its full path
+// Create creates a new filesystem by its full path.
 func (z *Zfs) Create(fs string) error {
 	_, err := z.exec("/sbin/zfs", "create", fs).Output()
 	return err
 }
 
-// Send initializes a `zfs send` command
+// Send initializes a `zfs send` command.
 func (z *Zfs) Send(fs string, previous, current string, raw, dry bool) *exec.Cmd {
 	args := []string{"send"}
 
@@ -99,7 +101,7 @@ func (z *Zfs) Send(fs string, previous, current string, raw, dry bool) *exec.Cmd
 	return z.exec("/sbin/zfs", args...)
 }
 
-// Returns the index of the last common snapshot
+// Returns the index of the last common snapshot.
 func lastCommonSnapshotIndex(listA, listB []string) int {
 	result := -1
 

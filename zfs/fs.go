@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Fs represents a file system
+// Fs represents a file system.
 type Fs struct {
 	zfs      *Zfs
 	fullname string
@@ -31,7 +31,7 @@ func newFs(z *Zfs, fullname string) *Fs {
 	}
 }
 
-// Children returns a sorted list of direct children
+// Children returns a sorted list of direct children.
 func (f *Fs) Children() (children []*Fs) {
 	for _, child := range f.children {
 		children = append(children, child)
@@ -44,7 +44,7 @@ func (f *Fs) Children() (children []*Fs) {
 	return children
 }
 
-// GetChild searches the filesystem with the given path recursively and returns it
+// GetChild searches the filesystem with the given path recursively and returns it.
 func (f *Fs) GetChild(fspath string) (*Fs, error) {
 	var fsname string
 	slash := strings.IndexByte(fspath, '/')
@@ -103,9 +103,11 @@ func (f *Fs) String() string {
 }
 
 func (f *Fs) doString(level int) string {
+	const indent = 2
+
 	s := fmt.Sprintf("%s -> %s\n", strings.Repeat("  ", level), f.name)
 	for _, snap := range f.snaps {
-		s = s + fmt.Sprintf("%s @> %s\n", strings.Repeat("  ", level+2), snap)
+		s = s + fmt.Sprintf("%s @> %s\n", strings.Repeat("  ", level+indent), snap)
 	}
 
 	for _, fs := range f.children {
@@ -148,7 +150,7 @@ func (f *Fs) addChild(desc string) {
 	}
 }
 
-// Snapshots returns a list of all snapshots
+// Snapshots returns a list of all snapshots.
 func (f *Fs) Snapshots() []string {
 	return f.snaps
 }

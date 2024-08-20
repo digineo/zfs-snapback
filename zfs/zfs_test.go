@@ -107,5 +107,4 @@ func TestLastCommonSnapshotIndex(t *testing.T) {
 			strings.Split(test.listB, " "),
 		), `A="%s" B="%s"`, test.listA, test.listB)
 	}
-
 }
