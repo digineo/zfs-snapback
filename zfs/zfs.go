@@ -75,9 +75,20 @@ func (z *Zfs) parseList(b []byte) *Fs {
 	return root
 }
 
+func canIgnoreCreateError(msg string) bool {
+	return strings.Contains(msg, "successfully created, but not mounted") ||
+		strings.Contains(msg, "filesystem successfully created, but it may only be mounted by root")
+}
+
 // Create creates a new filesystem by its full path.
 func (z *Zfs) Create(fs string) error {
 	_, err := z.exec("/sbin/zfs", "create", fs).Output()
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && canIgnoreCreateError(string(exitErr.Stderr)) {
+		return nil
+	}
+
 	return err
 }
 

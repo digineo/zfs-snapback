@@ -2,7 +2,6 @@ package zfs
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -213,14 +212,7 @@ func DoSync(from, to *Fs, flags Flags) error {
 			// ensure the filesystem exists
 			toChild, err := to.CreateIfMissing(fromChild.name)
 			if err != nil {
-				var exitErr *exec.ExitError
-				ignore := false
-				if errors.As(err, &exitErr) {
-					ignore = canIgnoreCreateError(string(exitErr.Stderr))
-				}
-				if !ignore {
-					return err
-				}
+				return err
 			}
 			err = DoSync(fromChild, toChild, flags)
 			if err != nil {
@@ -230,9 +222,4 @@ func DoSync(from, to *Fs, flags Flags) error {
 	}
 
 	return nil
-}
-
-func canIgnoreCreateError(msg string) bool {
-	return strings.Contains(msg, "successfully created, but not mounted") ||
-		strings.Contains(msg, "filesystem successfully created, but it may only be mounted by root")
 }
