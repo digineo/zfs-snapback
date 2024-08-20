@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -51,7 +52,7 @@ func (z *Zfs) List() (*Fs, error) {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && exitErr != nil && len(exitErr.Stderr) > 0 {
 			// Add stderr to error message
-			err = fmt.Errorf("%s: %s", err, strings.TrimSpace(string(exitErr.Stderr)))
+			err = fmt.Errorf("%w: %s", exitErr, strings.TrimSpace(string(exitErr.Stderr)))
 		}
 
 		return nil, err
@@ -106,22 +107,12 @@ func lastCommonSnapshotIndex(listA, listB []string) int {
 	result := -1
 
 	for i, name := range listA {
-		if indexOf(listB, name) != -1 {
+		if slices.Index(listB, name) != -1 {
 			result = i
 		}
 	}
 
 	return result
-}
-
-func indexOf(list []string, needle string) int {
-	for i, e := range list {
-		if e == needle {
-			return i
-		}
-	}
-
-	return -1
 }
 
 func parseTransferSize(data []byte) (int64, error) {
