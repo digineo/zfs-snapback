@@ -59,7 +59,7 @@ func (t *Transfer) sendSize() (int64, error) {
 	cmd := t.Source.zfs.Send(t.Source.fullname, t.PreviousSnapshot, t.CurrentSnapshot, t.Flags.Raw, true)
 	out, err := cmd.Output()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to determine size: %w", err)
 	}
 
 	return parseTransferSize(out)

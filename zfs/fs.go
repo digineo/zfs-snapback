@@ -84,7 +84,7 @@ func (f *Fs) CreateIfMissing(name string) (*Fs, error) {
 
 	fullpath := f.fullname + "/" + name
 	if err := f.zfs.Create(fullpath); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create %q: %w", fullpath, err)
 	}
 
 	fs := newFs(f.zfs, fullpath)
