@@ -131,7 +131,7 @@ func (t *Transfer) run() error { //nolint:funlen
 			}
 			bar.Finish()
 		} else {
-			io.Copy(in, out)
+			_, _ = io.Copy(in, out)
 		}
 	}
 
