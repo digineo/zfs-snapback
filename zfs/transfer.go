@@ -20,6 +20,8 @@ type Flags struct {
 	Progress    bool
 	Raw         bool
 	Compression string
+
+	XProperties []string
 }
 
 // Transfer is a set of arguments for transferring a single snapshot.
@@ -44,6 +46,11 @@ func (t *Transfer) recv() *exec.Cmd {
 		// -F must be passed before the filesystem argument
 		args = append(args, "-F")
 	}
+
+	for _, prop := range t.Flags.XProperties {
+		args = append(args, "-x", prop)
+	}
+
 	args = append(args, t.Destination.fullname)
 
 	return t.Destination.zfs.exec("/sbin/zfs", args...)

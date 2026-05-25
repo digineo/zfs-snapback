@@ -49,6 +49,7 @@ func init() {
 	set.BoolVarP(&flags.Progress, "progress", "p", false, "Show progress")
 	set.BoolVarP(&flags.Force, "force", "f", false, "Force a rollback of the destination dataset to the most recent snapshot before performing the receive operation.")
 	set.BoolVarP(&flags.Raw, "raw", "w", false, "Send encrypted streams as raw.")
+	set.StringArrayVarP(&flags.XProperties, "recv-x", "x", []string{}, "Passes the -x parameter to zfs recv.")
 	set.StringVarP(&flags.Compression, "compression", "c", "", "Set the compression option for SSH (yes/no)")
 
 	RootCmd.AddCommand(syncCmd)
