@@ -1,7 +1,11 @@
 package zfs
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"os/exec"
 	"sort"
 	"strings"
 )
@@ -29,6 +33,51 @@ func newFs(z *Zfs, fullname string) *Fs {
 		children: make(map[string]*Fs),
 		snaps:    []string{},
 	}
+}
+
+const (
+	TypeFilesystem = "filesystem"
+	TypeSnapshot   = "snapshot"
+)
+
+func (f *Fs) fetchLists() error {
+	for _, t := range []string{TypeFilesystem, TypeSnapshot} {
+		if err := f.fetchList(t); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f *Fs) fetchList(zfsType string) error {
+	cmd := f.zfs.exec("/sbin/zfs", "list", "-t", zfsType, "-H", "-r", "-o", "name")
+	b, err := cmd.Output()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr != nil && len(exitErr.Stderr) > 0 {
+			// Add stderr to error message
+			err = fmt.Errorf("%w: %s", exitErr, strings.TrimSpace(string(exitErr.Stderr)))
+		}
+
+		return err
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(b))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		switch zfsType {
+		case TypeFilesystem:
+			f.addFilesystem(line)
+		case TypeSnapshot:
+			f.addSnapshot(line)
+		default:
+			panic("invalid zfs type: " + zfsType)
+		}
+	}
+
+	return nil
 }
 
 // Children returns a sorted list of direct children.
@@ -125,12 +174,12 @@ func (f *Fs) addSnapshot(desc string) {
 	fs, e := f.GetChild(name)
 	if e != nil {
 		panic(e)
-	} else {
-		fs.snaps = append(fs.snaps, snapname)
 	}
+
+	fs.snaps = append(fs.snaps, snapname)
 }
 
-func (f *Fs) addChild(desc string) {
+func (f *Fs) addFilesystem(desc string) {
 	components := strings.Split(desc, "/")
 	if f.name != "" {
 		components = components[1:]

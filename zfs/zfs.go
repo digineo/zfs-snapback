@@ -1,7 +1,6 @@
 package zfs
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -46,33 +45,8 @@ func GetFilesystem(flags Flags, location string) (*Fs, error) {
 
 // List returns all ZFS volumes and snapshots.
 func (z *Zfs) List() (*Fs, error) {
-	cmd := z.exec("/sbin/zfs", "list", "-t", "all", "-Hr", "-o", "name")
-	b, err := cmd.Output()
-	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) && exitErr != nil && len(exitErr.Stderr) > 0 {
-			// Add stderr to error message
-			err = fmt.Errorf("%w: %s", exitErr, strings.TrimSpace(string(exitErr.Stderr)))
-		}
-
-		return nil, err
-	}
-	return z.parseList(b), nil
-}
-
-func (z *Zfs) parseList(b []byte) *Fs {
 	root := newFs(z, "")
-	scanner := bufio.NewScanner(bytes.NewReader(b))
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.ContainsRune(line, '@') {
-			root.addSnapshot(line)
-		} else {
-			root.addChild(line)
-		}
-	}
-	return root
+	return root, root.fetchLists()
 }
 
 func canIgnoreCreateError(msg string) bool {

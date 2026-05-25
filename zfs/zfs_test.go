@@ -14,8 +14,15 @@ func TestParseList(t *testing.T) {
 	data, err := os.ReadFile("testdata/zfs_list")
 	assert.NoError(err)
 
-	zfs := Zfs{}
-	result := zfs.parseList(data)
+	result := newFs(nil, "")
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "@") {
+			result.addSnapshot(line)
+		} else {
+			result.addFilesystem(line)
+		}
+	}
 
 	fs, err := result.GetChild("xx")
 	assert.EqualError(err, "unable to find xx")
